@@ -1,37 +1,34 @@
 const Discord = require('discord.js');
-const client = new Discord.Client();
+const { Client, Intents } = require('discord.js')
+const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
 const config = require('./config.json');
 
 const Danbooru = require('danbooru');
 const booru = new Danbooru;
 
-const insults = [
-    'bitch',
-    'fuckhead',
-    'stupid idiot',
-    'why are you even talking',
-    'i hate u',
-    'be quiet stinky fox',
-    'lol who lets a fox inside',
-    'what kind of idiot are you',
-    'if there were two people left on earth and it was me and you I still wouldn\'t be nice',
-    'when you look at mirrors they crack',
-    'shut the fuck up',
-    'go eat some meat stinky'
-];
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize('database', 'user', 'password', {
+    host: 'localhost',
+    dialect: 'sqlite',
+    logging: 'false',
+    storage: 'database.sqlite',
+});
 
-const compliments = [
-    'hi mushbun!!!',
-    'hows the bun today!!!',
-    'wao a qt!!!!',
-    'big hearts for smol bun',
-    'wowowowow urcute',
-    'here you can have some tails to rest on',
-    'make sure you\'re drinking water!!',
-    'make sure to eat!!',
-    'don\'t stay up too late!!',
-    'remember I\'ll always love you~'
-];
+const Tags = sequelize.define('tags', {
+    name: {
+        type: Sequelize.STRING,
+        unique: true,
+    },
+    description: Sequelize.TEXT,
+    username: Sequelize.STRING,
+    usage_count: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
+        allowNull: false,
+    },
+})
+
+import { compliments, insults } from './responses';
 
 const booruRandomPosts = () => {
     booru.posts({ random: true, tags: '-loli -furry' }).then(posts => {
@@ -48,7 +45,9 @@ const booruRandomPosts = () => {
     });
 };
 
+
 client.once('ready', () => {
+    Tags.sync();
     client.user.setPresence({
         activity: { name: 'meola be dumb', type: 'WATCHING' }, status: 'idle'
     });
@@ -72,6 +71,69 @@ client.once('ready', () => {
 //         })
 //     }
 // })
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isCommand()) return;
+
+    const { commandName: command } = interaction;
+
+    if (command === 'addtag') {
+        const tagName = interaction.options.getString('name');
+        const tagDescription = interaction.options.getString('description');
+
+        try {
+            const tag = await Tags.create({
+                name: tagName,
+                description: tagDescription,
+                username: interaction.user.username,
+            });
+            return interaction.reply('tag ${tag.name} added.');
+        }
+        catch (error) {
+            if (error.name === 'SequelizeUniqueConstraintError') {
+                return interaction.reply('that tag already exists!!!!');
+            }
+            return interaction.reply('oh no.. something went wrong with adding that tag');
+        }
+    } else if (command === 'tag') {
+        const tagName = interaction.options.getString('name');
+
+        const tag = await Tags.findOne({ where: { name: tagName } });
+        if (tag) {
+            tag.increment('usage_count');
+            return interaction.reply(tag.get('description'));
+        }
+        return interaction.reply('no tags exist for ${tagName} yet');
+    } else if (command === 'edittag') {
+        const tagName = interaction.options.getString('name');
+        const tagDescription = interaction.options.getString('description');
+
+        const affectedRows = await Tags.update({ description: tagDescription }, { where: { name: tagName } });
+        if (affectedRows > 0) {
+            return interaction.reply('the tag ${tagName} was edi.. edit.. edite.. BLEH');
+        }
+        return interaction.reply('wait theres a tag with that name..?');
+    } else if (command === 'taginfo') {
+        const tagName = interaction.options.getString('name');
+
+        const tag = await Tags.findOne({ where: { name: tagName } });
+        if (tag) {
+            return interaction.reply('${tagName} was birthed by ${tag.username} at ${tag.createdAt} and has been abused ${tag.usage_count} times! wowie!');
+        }
+        return interaction.reply('there doesn\t seem to be something here with that name.. maybe ask mom?')
+    } else if (command === 'showtags') {
+        const tagList = await Tags.findAll({ attributes: ['name'] });
+        const tagString = tagList.map(t => t.name).join(', ') || 'theres no tags... oh no..';
+        return interaction.reply('heres the tags!!! ${tagString}');
+    } else if (command === 'removetag') {
+        const tagName = interaction.options.getString('name');
+
+        const rowCount = await Tags.destroy({ where: { name: tagName } });
+        if (!rowCount) return interaction.reply('what does ${tagName} mean..');
+
+        return interaction.reply('nerd_down');
+    }
+})
 
 client.on('message', message => {
     if (message.author.id === '111577705044066304' && message.channel.type === 'dm') {
