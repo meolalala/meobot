@@ -28,7 +28,7 @@ const Tags = sequelize.define('tags', {
     },
 })
 
-import { compliments, insults } from './responses';
+// import { compliments, insults } from './responses';
 
 const booruRandomPosts = () => {
     booru.posts({ random: true, tags: '-loli -furry' }).then(posts => {
