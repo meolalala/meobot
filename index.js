@@ -75,10 +75,10 @@ client.once('ready', () => {
 client.on('interactionCreate', async interaction => {
     if (!interaction.isCommand()) return;
 
+    const tagName = interaction.options.getString('name');
     const { commandName: command } = interaction;
 
     if (command === 'addtag') {
-        const tagName = interaction.options.getString('name');
         const tagDescription = interaction.options.getString('description');
 
         try {
@@ -96,27 +96,25 @@ client.on('interactionCreate', async interaction => {
             return interaction.reply('oh no.. something went wrong with adding that tag');
         }
     } else if (command === 'tag') {
-        const tagName = interaction.options.getString('name');
-
         const tag = await Tags.findOne({ where: { name: tagName } });
+
         if (tag) {
             tag.increment('usage_count');
             return interaction.reply(tag.get('description'));
         }
         return interaction.reply('no tags exist for ${tagName} yet');
     } else if (command === 'edittag') {
-        const tagName = interaction.options.getString('name');
-        const tagDescription = interaction.options.getString('description');
+        const tagDescription = interacion.options.getString('description');
 
         const affectedRows = await Tags.update({ description: tagDescription }, { where: { name: tagName } });
+
         if (affectedRows > 0) {
             return interaction.reply('the tag ${tagName} was edi.. edit.. edite.. BLEH');
         }
         return interaction.reply('wait theres a tag with that name..?');
     } else if (command === 'taginfo') {
-        const tagName = interaction.options.getString('name');
-
         const tag = await Tags.findOne({ where: { name: tagName } });
+
         if (tag) {
             return interaction.reply('${tagName} was birthed by ${tag.username} at ${tag.createdAt} and has been abused ${tag.usage_count} times! wowie!');
         }
@@ -124,10 +122,9 @@ client.on('interactionCreate', async interaction => {
     } else if (command === 'showtags') {
         const tagList = await Tags.findAll({ attributes: ['name'] });
         const tagString = tagList.map(t => t.name).join(', ') || 'theres no tags... oh no..';
+
         return interaction.reply('heres the tags!!! ${tagString}');
     } else if (command === 'removetag') {
-        const tagName = interaction.options.getString('name');
-
         const rowCount = await Tags.destroy({ where: { name: tagName } });
         if (!rowCount) return interaction.reply('what does ${tagName} mean..');
 

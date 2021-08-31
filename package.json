@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/meolalala/meobot/issues"
   },
-  "homepage": "https://github.com/meolalala/meobot#readme"
+  "homepage": "https://github.com/meolalala/meobot#readme",
+  "dependencies": {
+    "node.js": "0.0.1-security"
+  }
 }
