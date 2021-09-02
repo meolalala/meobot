@@ -10,7 +10,7 @@ const Sequelize = require('sequelize');
 const sequelize = new Sequelize('database', 'user', 'password', {
     host: 'localhost',
     dialect: 'sqlite',
-    logging: 'false',
+    // logging: 'false',
     storage: 'database.sqlite',
 });
 
@@ -28,7 +28,7 @@ const Tags = sequelize.define('tags', {
     },
 })
 
-// import { compliments, insults } from './responses';
+
 
 const booruRandomPosts = () => {
     booru.posts({ random: true, tags: '-loli -furry' }).then(posts => {
@@ -48,9 +48,11 @@ const booruRandomPosts = () => {
 
 client.once('ready', () => {
     Tags.sync();
-    client.user.setPresence({
-        activity: { name: 'meola be dumb', type: 'WATCHING' }, status: 'idle'
-    });
+    // client.user.setPresence({
+    //     activity: { name: 'meola be dumb', type: 'WATCHING' }, status: 'idle'
+    // });
+    client.user.setStatus('idle')
+    client.user.setActivity({ name: 'meola be stupid', type: 'WATCHING' })
     console.log('Ready!');
     setInterval(booruRandomPosts, 600000);
 });
@@ -131,6 +133,9 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply('nerd_down');
     }
 })
+
+const Responses = require('./responses.js')
+const { compliments, insults } = Responses
 
 client.on('message', message => {
     if (message.author.id === '111577705044066304' && message.channel.type === 'dm') {
